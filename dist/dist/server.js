@@ -55,16 +55,16 @@ const authMiddleware = (req, res, next) => {
     const token = (_a = req.header('Authorization')) === null || _a === void 0 ? void 0 : _a.replace('Bearer ', '');
     if (!token) {
         res.status(401).json({ error: 'No token provided' });
-        return; // Exit without returning a value
+        return;
     }
     try {
         const decoded = jsonwebtoken_1.default.verify(token, 'this_is_a_secret_key');
         req.userId = decoded.userId;
-        next(); // Proceed to the next middleware or route handler
+        next();
     }
     catch (error) {
         res.status(401).json({ error: 'Invalid token' });
-        return; // Exit without returning a value
+        return;
     }
 };
 // Routes
@@ -123,6 +123,25 @@ app.post('/api/reset-password/:token', ((req, res) => __awaiter(void 0, void 0, 
     }
     catch (err) {
         res.status(400).json({ error: 'Password reset failed' });
+    }
+})));
+// New Login Route
+app.post('/api/login', ((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { email, password } = req.body;
+    if (!email || !password) {
+        return res.status(400).json({ error: 'Email and password are required' });
+    }
+    try {
+        const user = yield User.findOne({ email });
+        if (!user || !(yield bcryptjs_1.default.compare(password, user.password))) {
+            return res.status(401).json({ error: 'Invalid email or password' });
+        }
+        const token = jsonwebtoken_1.default.sign({ userId: user._id.toString() }, 'this_is_a_secret_key', { expiresIn: '1h' });
+        yield AuditLog.create({ userId: user._id, action: 'User logged in' });
+        res.json({ token });
+    }
+    catch (err) {
+        res.status(500).json({ error: 'Login failed due to server error' });
     }
 })));
 // Sample protected route to use authMiddleware

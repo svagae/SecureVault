@@ -35,6 +35,7 @@ interface IUser extends mongoose.Document {
   email: string;
   password: string;
   consent: boolean;
+  _id: mongoose.Types.ObjectId;
 }
 const userSchema = new Schema<IUser>({
   email: { type: String, required: true, unique: true },
@@ -72,15 +73,15 @@ const authMiddleware: RequestHandler = (req: Request, res: Response, next: NextF
   const token = req.header('Authorization')?.replace('Bearer ', '');
   if (!token) {
     res.status(401).json({ error: 'No token provided' });
-    return; // Exit without returning a value
+    return;
   }
   try {
     const decoded = jwt.verify(token, 'this_is_a_secret_key') as { userId: string };
     req.userId = decoded.userId;
-    next(); // Proceed to the next middleware or route handler
+    next();
   } catch (error) {
     res.status(401).json({ error: 'Invalid token' });
-    return; // Exit without returning a value
+    return;
   }
 };
 
@@ -124,7 +125,7 @@ app.post('/api/reset-password', (async (req: Request, res: Response) => {
   }
 }) as RequestHandler);
 
-app.post('/api/reset-password/:token', (async (req: Request, res: Response) => {
+app.post('/api/reset-password/:token', (async (req: Request, res: Response) =>{
   const { token } = req.params;
   const { password } = req.body;
   try {
@@ -140,9 +141,29 @@ app.post('/api/reset-password/:token', (async (req: Request, res: Response) => {
   }
 }) as RequestHandler);
 
+// New Login Route
+app.post('/api/login', (async (req: Request, res: Response) => {
+  const { email, password } = req.body;
+  if (!email || !password) {
+    return res.status(400).json({ error: 'Email and password are required' });
+  }
+  try {
+    const user = await User.findOne({ email });
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+      return res.status(401).json({ error: 'Invalid email or password' });
+    }
+    const token = jwt.sign({ userId: user._id.toString() }, 'this_is_a_secret_key', { expiresIn: '1h' });
+    await AuditLog.create({ userId: user._id, action: 'User logged in' });
+    res.json({ token });
+  } catch (err) {
+    res.status(500).json({ error: 'Login failed due to server error' });
+  }
+}) as RequestHandler);
+
 // Sample protected route to use authMiddleware
 app.get('/api/protected', authMiddleware, (req: Request, res: Response) => {
   res.json({ message: 'Protected data', userId: req.userId });
 });
 
 app.listen(5000, () => console.log('Server running on port 5000'));
+ 
