@@ -1,19 +1,24 @@
+
 import React, { useState } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 import './App.css';
 
 function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const navigate = useNavigate();
 
   const handleLogin = async () => {
-    setError(''); // Clear previous errors
+    setError('');
     try {
-      const response = await axios.post('http://localhost:5000/api/login', { email, password });
-      const { token } = response.data;
-      localStorage.setItem('token', token); // Store token for authenticated requests
-      setError('Login successful! Redirecting...'); // Placeholder for navigation
+      const response = await axios.post('http://localhost:5000/api/login', { email, password }, { withCredentials: true });
+      if (response.data.message === 'Login successful') {
+        navigate('/dashboard');
+      } else {
+        setError('Login failed due to unexpected response.');
+      }
     } catch (err) {
       setError(err.response?.data?.error || 'Login failed. Please try again.');
     }
