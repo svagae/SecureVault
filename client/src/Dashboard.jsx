@@ -11,8 +11,10 @@ function Dashboard() {
   const [userData, setUserData] = useState(null);
   const [error, setError] = useState('');
   const [threatEvents, setThreatEvents] = useState([]);
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const navigate = useNavigate();
   const ws = useRef(null);
+  
 
   useEffect(() => {
     ws.current = new WebSocket('ws://localhost:5000');
@@ -97,6 +99,8 @@ function Dashboard() {
     }
   };
 
+  const toggleSidebar = () => setIsCollapsed((prev) => !prev);
+
   if (error) return <div className="container"><div className="error">{error}</div></div>;
   if (!userData) return <div className="container"><p>Loading...</p></div>;
 
@@ -124,17 +128,21 @@ function Dashboard() {
 
   return (
     <div className="dashboard-root">
-      <aside className="dashboard-sidebar">
+      <aside className={`dashboard-sidebar ${isCollapsed ? 'collapsed' : ''}`}>
+        <button className="collapsible-toggle" onClick={toggleSidebar}>⋮</button>
         <div className="sidebar-header">
           <span className="sidebar-icon">🛡️</span>
           <span className="sidebar-title">SecureVault</span>
         </div>
         <nav className="sidebar-nav">
           <div className="sidebar-link active">
-            <span className="sidebar-link-icon">🛡️</span> Dashboard
+            <span className="sidebar-link-icon">🛡️</span>
+            <span>Dashboard</span>
+            {threatEvents.length > 0 && <span className="threat-badge">{threatEvents.length}</span>}
           </div>
           <div className="sidebar-link">
-            <span className="sidebar-link-icon">⚙️</span> Settings
+            <span className="sidebar-link-icon">⚙️</span>
+            <span>Settings</span>
           </div>
         </nav>
       </aside>

@@ -2,6 +2,7 @@ body {
   background: #18181b;
   margin: 0;
   font-family: 'Inter', Arial, sans-serif;
+  overflow-x: hidden;
 }
 
 .container {
@@ -77,6 +78,8 @@ h1 {
   background: #18181b;
   color: #fff;
   font-family: 'Inter', Arial, sans-serif;
+  position: relative;
+  overflow: hidden;
 }
 
 /* Sidebar */
@@ -89,6 +92,7 @@ h1 {
   padding: 32px 0 0 0;
   min-height: 100vh;
   transition: width 0.3s ease;
+  z-index: 10; /* Ensure sidebar stays above background */
 }
 
 .dashboard-sidebar.collapsed {
@@ -108,6 +112,77 @@ h1 {
 .dashboard-sidebar.collapsed .sidebar-header {
   opacity: 0;
   padding-left: 0;
+}
+
+.dashboard-actions {
+  margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 500px;
+  width: 100%;
+}
+
+.dashboard-btn {
+  width: 100%;
+  padding: 18px 0;
+  border: 2px solid #232329;
+  border-radius: 12px;
+  font-size: 1.2rem;
+  font-weight: 700;
+  cursor: pointer;
+  background: transparent;
+  color: #fff;
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s, border 0.2s;
+  box-shadow: 0 2px 8px 0 rgba(139, 92, 246, 0.08);
+}
+
+.dashboard-btn:hover {
+  box-shadow: 0 4px 12px 0 rgba(139, 92, 246, 0.2);
+}
+
+.logout-btn {
+  background: #8b5cf6;
+  border-color: #8b5cf6;
+}
+
+.logout-btn:hover {
+  background: #7c3aed;
+  color: #fff;
+  border-color: #7c3aed;
+}
+
+.revoke-btn {
+  background: #ef4444;
+  border-color: #ef4444;
+}
+
+.revoke-btn:hover {
+  background: #dc2626;
+  color: #fff;
+  border-color: #dc2626;
+}
+
+.simulate-btn {
+  background: #f59e0b;
+  border-color: #f59e0b;
+}
+
+.simulate-btn:hover {
+  background: #d97706;
+  color: #fff;
+  border-color: #d97706;
+}
+
+.clear-btn {
+  background: #6b7280;
+  border-color: #6b7280;
+}
+
+.clear-btn:hover {
+  background: #4b5563;
+  color: #fff;
+  border-color: #4b5563;
 }
 
 .sidebar-icon {
@@ -140,7 +215,8 @@ h1 {
   transition: background 0.2s, color 0.2s;
 }
 
-.sidebar-link.active, .sidebar-link:hover {
+.sidebar-link.active,
+.sidebar-link:hover {
   background: #232329;
   color: #fff;
 }
@@ -167,8 +243,10 @@ h1 {
 .dashboard-main {
   flex: 1;
   padding: 40px 48px;
-  background: #18181b;
+  background: transparent; /* Allow background effect to show through */
   transition: margin-left 0.3s ease;
+  position: relative;
+  z-index: 10; /* Ensure content stays above background */
 }
 
 .dashboard-main.collapsed {
@@ -186,14 +264,18 @@ h1 {
   border-radius: 12px;
   padding: 32px 32px 24px 32px;
   margin-bottom: 32px;
-  box-shadow: 0 2px 16px 0 rgba(139,92,246,0.08);
+  box-shadow: 0 2px 16px 0 rgba(139, 92, 246, 0.08);
   border: 1px solid #232329;
   animation: fadeIn 0.5s ease-in;
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .dashboard-welcome-card h2 {
@@ -220,7 +302,7 @@ h1 {
   background: #18181b;
   border-radius: 12px;
   padding: 24px 24px 16px 24px;
-  box-shadow: 0 2px 16px 0 rgba(139,92,246,0.08);
+  box-shadow: 0 2px 16px 0 rgba(139, 92, 246, 0.08);
   border: 1px solid #232329;
   flex: 1;
   min-width: 320px;
@@ -325,6 +407,15 @@ h1 {
   .dashboard-welcome-card {
     padding: 16px;
   }
+  .dashboard-actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .dashboard-btn {
+    width: auto;
+    padding: 12px 16px;
+  }
 }
 
 /* Utility */
@@ -354,52 +445,96 @@ h1 {
   }
 }
 
-.dashboard-actions {
+.notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: #232329;
+  padding: 12px 16px;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
   display: flex;
-  flex-direction: column;
-  gap: 16px;
-  margin-top: 24px;
-  max-width: 500px;
-  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  animation: slideIn 0.3s ease-out;
+  z-index: 1000;
 }
 
-.dashboard-btn {
-  width: 100%;
-  padding: 18px 0;
-  border: 2px solid #232329;
-  border-radius: 12px;
-  font-size: 1.2rem;
-  font-weight: 700;
-  cursor: pointer;
-  background: transparent;
-  color: #fff;
-  transition: background 0.2s, color 0.2s, box-shadow 0.2s, border 0.2s;
-  box-shadow: 0 2px 8px 0 rgba(139,92,246,0.08);
+.notification-red {
+  border-left: 4px solid #f87171;
 }
 
-.logout-btn {
-  background: #8b5cf6;
-}
-.logout-btn:hover {
-  background: #8b5cf6;
-  color: #fff;
-  border-color: #8b5cf6;
+.notification-violet {
+  border-left: 4px solid #8b5cf6;
 }
 
-.revoke-btn {
-  background: #ef4444;
-}
-.revoke-btn:hover {
-  background: #ef4444;
-  color: #fff;
-  border-color: #ef4444;
+.notification-time {
+  font-size: 0.9rem;
+  color: #aaa;
+  margin-left: 10px;
 }
 
-.simulate-btn {
-  background: #f59e0b;
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
-.simulate-btn:hover {
-  background: #f59e0b;
+
+@keyframes slideOut {
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+.threat-badge {
+  background: #f87171;
   color: #fff;
-  border-color: #f59e0b;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  margin-left: 8px;
+}
+
+/* Background Effect */
+.dashboard-bg {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 1;
+  overflow: hidden;
+  background: radial-gradient(circle at 20% 20%, #2a2a2e 0%, #18181b 70%);
+}
+
+#lights {
+  position: absolute;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 1;
+  pointer-events: none;
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.1) 0%, transparent 70%);
+  animation: pulse 10s infinite alternate;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.6;
+  }
+  100% {
+    opacity: 0.3;
+  }
 }
