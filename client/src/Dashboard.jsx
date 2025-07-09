@@ -12,15 +12,16 @@ function Dashboard() {
   const [error, setError] = useState('');
   const [threatEvents, setThreatEvents] = useState([]);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [activeTab, setActiveTab] = useState('dashboard'); // New state for tab switching
+  const [apiResults, setApiResults] = useState(null); // State for API scan results
   const navigate = useNavigate();
   const ws = useRef(null);
-  
 
   useEffect(() => {
     ws.current = new WebSocket('ws://localhost:5000');
     ws.current.onmessage = (event) => {
       const data = JSON.parse(event.data);
-      console.log('Received threat event:', data); // Debug log
+      console.log('Received threat event:', data);
       if (data.type === 'threat') setThreatEvents((prev) => [data, ...prev].slice(0, 5));
     };
     ws.current.onerror = () => setError('WebSocket connection failed');
@@ -101,6 +102,28 @@ function Dashboard() {
 
   const toggleSidebar = () => setIsCollapsed((prev) => !prev);
 
+  const clearThreats = () => {
+    setThreatEvents([]);
+  };
+
+  const handleApiUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const response = await axios.post('http://localhost:5000/api/scan-api', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        withCredentials: true
+      });
+      setApiResults(response.data);
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to scan API file');
+    }
+  };
+
   if (error) return <div className="container"><div className="error">{error}</div></div>;
   if (!userData) return <div className="container"><p>Loading...</p></div>;
 
@@ -135,64 +158,74 @@ function Dashboard() {
           <span className="sidebar-title">SecureVault</span>
         </div>
         <nav className="sidebar-nav">
-          <div className="sidebar-link active">
+          <div
+            className={`sidebar-link ${activeTab === 'dashboard' ? 'active' : ''}`}
+            onClick={() => setActiveTab('dashboard')}
+          >
             <span className="sidebar-link-icon">🛡️</span>
             <span>Dashboard</span>
             {threatEvents.length > 0 && <span className="threat-badge">{threatEvents.length}</span>}
           </div>
-          <div className="sidebar-link">
-            <span className="sidebar-link-icon">⚙️</span>
-            <span>Settings</span>
+          <div
+            className={`sidebar-link ${activeTab === 'api-security' ? 'active' : ''}`}
+            onClick={() => setActiveTab('api-security')}
+          >
+            <span className="sidebar-link-icon">🔒</span>
+            <span>API Security</span>
           </div>
         </nav>
       </aside>
-      <main className="dashboard-main">
-        <h1 className="dashboard-title">Dashboard</h1>
-        <div className="dashboard-welcome-card">
-          <h2>Welcome Back!</h2>
-          <p>Here's your security overview. All systems are currently operational.</p>
-          {userData && <p>Email: {userData.email}</p>}
-        </div>
-        <div className="dashboard-cards-row">
-          <div className="dashboard-card threat-list">
-            <h3>Real-Time Threat Detection</h3>
-            <ul>
-              {threatEvents.map((event, idx) => (
-                <li key={idx} className={event.color === 'red' ? 'threat-red' : 'threat-violet'}>
-                  <span className="threat-icon">{event.icon}</span>
-                  <span>{event.text}</span>
-                  <span className="threat-time">{event.time}</span>
-                  <span className="threat-location">IP: {event.ip || 'unknown'}, Country: {event.country || 'unknown'}</span>
-                </li>
-              ))}
-            </ul>
+      <main className={`dashboard-main ${isCollapsed ? 'collapsed' : ''}`}>
+        {activeTab === 'dashboard' ? (
+          <>
+            <h1 className="dashboard-title">Dashboard</h1>
+            <div className="dashboard-welcome-card">
+              <h2>Welcome Back!</h2>
+              <p>Here's your security overview. All systems are currently operational.</p>
+              {userData && <p>Email: {userData.email}</p>}
+            </div>
+            <div className="dashboard-cards-row">
+              <div className="dashboard-card threat-list">
+                <h3>Real-Time Threat Detection</h3>
+                <ul>
+                  {threatEvents.map((event, idx) => (
+                    <li key={idx} className={event.color === 'red' ? 'threat-red' : 'threat-violet'}>
+                      <span className="threat-icon">{event.icon}</span>
+                      <span>{event.text}</span>
+                      <span className="threat-time">{event.time}</span>
+                      <span className="threat-location">IP: {event.ip || 'unknown'}, Country: {event.country || 'unknown'}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="dashboard-card dashboard-chart">
+                <h3>Threat Events</h3>
+                <p className="dashboard-chart-desc">A live feed of security events over the last 30 minutes.</p>
+                <Line data={chartData} options={chartOptions} height={180} />
+              </div>
+            </div>
+            <div className="dashboard-actions">
+              <button onClick={handleLogout} className="dashboard-btn logout-btn">Log Out</button>
+              <button onClick={handleRevokeToken} className="dashboard-btn revoke-btn">Revoke Token</button>
+              <button onClick={simulateTokenReuse} className="dashboard-btn simulate-btn">Simulate Token Reuse</button>
+              <button onClick={clearThreats} className="dashboard-btn clear-btn">Clear Threats</button>
+            </div>
+          </>
+        ) : (
+          <div className="api-security-section">
+            <h1 className="dashboard-title">API Security Testing</h1>
+            <div className="api-upload">
+              <input type="file" accept=".json,.yaml" onChange={handleApiUpload} />
+              <p>Upload an OpenAPI/Swagger file to scan for security issues.</p>
+              {apiResults && (
+                <div className="api-results">
+                  <h3>Scan Results</h3>
+                  <pre>{JSON.stringify(apiResults, null, 2)}</pre>
+                </div>
+              )}
+            </div>
           </div>
-          <div className="dashboard-card dashboard-chart">
-            <h3>Threat Events</h3>
-            <p className="dashboard-chart-desc">A live feed of security events over the last 30 minutes.</p>
-            <Line data={chartData} options={chartOptions} height={180} />
-          </div>
-        </div>
-        <div className="dashboard-actions">
-          <button
-            onClick={handleLogout}
-            className="dashboard-btn logout-btn"
-          >
-            Log Out
-          </button>
-          <button
-            onClick={handleRevokeToken}
-            className="dashboard-btn revoke-btn"
-          >
-            Revoke Token
-          </button>
-          <button
-            onClick={simulateTokenReuse}
-            className="dashboard-btn simulate-btn"
-          >
-            Simulate Token Reuse
-          </button>
-        </div>
+        )}
       </main>
     </div>
   );
